@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D打印AR识别</title>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <style>
+        .buttons {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .btn {
+            background-color: rgba(255, 255, 255, 0.8);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            padding: 10px 20px;
+            margin: 0 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .status-message {
+            position: fixed;
+            top: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+            z-index: 998;
+        }
+    </style>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <!-- 状态消息 -->
+    <div class="status-message" id="statusMessage">
+        正在加载，请稍候...
+    </div>
+
+    <!-- AR场景 -->
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true;">
+        
+        <a-assets>
+            <!-- 替换以下URL为您的3D模型URL -->
+            <a-asset-item id="creature-model" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Duck/glTF/Duck.gltf"></a-asset-item>
+        </a-assets>
+        
+        <!-- 使用您生成的自定义标记 -->
+        <!-- 将marker.patt替换为您生成的.patt文件名 -->
+        <a-marker type="pattern" url="marker.patt" id="custom-marker">
+            <a-entity
+                id="creature-model-entity"
+                gltf-model="#creature-model"
+                position="0 0.5 0"
+                scale="0.5 0.5 0.5"
+                rotation="0 0 0"
+                animation="property: rotation; to: 0 360 0; loop: true; dur: 10000; easing: linear;">
+            </a-entity>
+        </a-marker>
+        
+        <a-entity camera></a-entity>
+    </a-scene>
+    
+    <!-- 界面按钮 -->
+    <div class="buttons">
+        <button class="btn" id="captureBtn">截图</button>
+    </div>
+    
+    <script>
+        const statusMessage = document.getElementById('statusMessage');
+        const customMarker = document.getElementById('custom-marker');
+        
+        // 页面加载完成后
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                statusMessage.textContent = '请将相机对准您的3D打印品';
+            }, 2000);
+        });
+        
+        // 标记检测事件
+        customMarker.addEventListener('markerFound', function() {
+            statusMessage.textContent = '已检测到您的3D打印品! 正在显示3D模型';
+        });
+        
+        customMarker.addEventListener('markerLost', function() {
+            statusMessage.textContent = '标记丢失，请保持3D打印品在视野内';
+        });
+        
+        // 截图按钮
+        document.getElementById('captureBtn').addEventListener('click', function() {
+            const scene = document.querySelector('a-scene');
+            const img = scene.components.screenshot.getCanvas('perspective').toDataURL('image/png');
+            
+            const link = document.createElement('a');
+            link.href = img;
+            link.download = 'ar-screenshot-' + Date.now() + '.png';
+            link.click();
+            
+            statusMessage.textContent = '已保存截图';
+            setTimeout(function() {
+                statusMessage.textContent = '请将相机对准3D打印品';
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
